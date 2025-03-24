@@ -1,0 +1,42 @@
+# 忽略 Go 编译生成的文件
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# 忽略 Go 测试生成的二进制文件
+*.test
+
+# 忽略 Go 编译生成的目录
+bin/
+pkg/
+
+# 忽略 Go Modules 下载的依赖
+vendor/
+
+# 忽略 Go 工作目录
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 忽略 Go 的缓存文件
+go.work.sum
+
+# 忽略环境变量文件
+.env
+.env.local
+
+# 忽略日志文件
+*.log
+
+# 忽略操作系统生成的文件
+.DS_Store
+Thumbs.db
+
+# 忽略用户特定的文件
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
