@@ -40,3 +40,6 @@ Thumbs.db
 *.user
 *.userosscache
 *.sln.docstates
+
+# 忽略测试文件
+test*.go
