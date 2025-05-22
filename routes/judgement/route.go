@@ -21,7 +21,7 @@ var supportedLanguages = map[string]bool{
 
 // 验证判题请求
 func validateRequest(jd *types.JudgementData) string {
-	if jd.Code == "" {
+	if jd.SolutionCode == "" {
 		return "代码不能为空"
 	}
 	if jd.Language == "" {
@@ -30,7 +30,7 @@ func validateRequest(jd *types.JudgementData) string {
 	if len(jd.Tests) == 0 {
 		return "测试用例不能为空"
 	}
-	if jd.Template == "" {
+	if jd.JudgeTemplate == "" {
 		return "判题模板不能为空"
 	}
 	if jd.TimeLimit <= 0 {

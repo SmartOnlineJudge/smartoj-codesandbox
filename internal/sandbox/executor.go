@@ -7,7 +7,7 @@ import (
 )
 
 // 定义代码执行函数映射
-var executeFuncMapping = map[string]func(*types.JudgementData, *types.Results, string) int{
+var executeFuncMapping = map[string]func(string, *types.JudgementData, *types.Results) string{
 	"python": executePython,
 }
 
@@ -36,9 +36,9 @@ func (e *CodeExecutor) execute() (string, *types.Results) {
 	}
 
 	// 执行判题
-	var status int = executeFunc(e.jd, &results, e.workspace)
-	if status == -1 {
-		return "判题异常", &results
+	errMessage := executeFunc(e.workspace, e.jd, &results)
+	if errMessage != "" {
+		return errMessage, &results
 	}
 	return "", &results
 }

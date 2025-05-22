@@ -14,8 +14,8 @@ type Tests []Test
 type JudgementData struct {
 	Language      string `json:"language"`   // 编程语言名称: python | java | c | cpp | go
 	QuestionId    int `json:"question_id"` // 当前题目对应的 ID
-	Template      string `json:"judge_template"` // 该编程语言对应的判题模板代码
-	Code          string `json:"solution_code"` // 用户编写的代码
+	JudgeTemplate string `json:"judge_template"` // 该编程语言对应的判题模板代码
+	SolutionCode  string `json:"solution_code"` // 用户编写的代码
 	Tests         Tests `json:"tests"` // 测试用例列表
 	TimeLimit     int `json:"time_limit"` // 时间限制（单位：ms）
 	MemoryLimit   float32 `json:"memory_limit"` // 内存限制（单位：MB）
