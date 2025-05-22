@@ -1,6 +1,7 @@
 # 智能算法刷题平台——代码沙箱仓库
 
-<h2 id="nAt2Z">判题沙箱介绍</h2>
+## 判题沙箱介绍
+
 判题沙箱指的是专门运行给定代码的一个应用程序。外部程序需要使用 HTTP 协议与判题沙箱进行通信。
 
 它负责接收用户编写的函数、判题模板、输入输出数据、编程语言类型、内存限制、时间限制等等参数，最终判题沙箱进程通过一个子协程来对本次输入进行判题操作。
@@ -9,20 +10,20 @@
 
 一句话总结判题沙箱的作用：运行用户提交的代码，判断正误并将结果返回。
 
-<h2 id="l86TF">技术栈</h2>
+## 技术栈
 1. Goroutine（Go 语言轻量级并发协程）
 2. Gin（Go 语言轻量级兼高性能 Web 后端框架）
 3. Docker（容器隔离技术）
 
-<h2 id="HRBh7">沙箱请求与响应</h2>
-<h3 id="eii8g">沙箱调用过程</h3>
+## 沙箱请求与响应
+### 沙箱调用过程
 ![](https://cdn.nlark.com/yuque/0/2025/png/47866636/1747230481656-709115f0-20f2-484f-89ab-508f39469b83.png)
 
-<h3 id="k03CG">沙箱内部调用过程</h3>
+### 沙箱内部调用过程
 ![](https://cdn.nlark.com/yuque/0/2025/png/47866636/1747280148859-9951a365-9d64-4915-833f-4d4cf0c8a2ab.png)
 
-<h2 id="rHfYM">功能设计思路</h2>
-<h3 id="B5eRK">输入输出数据</h3>
+## 沙箱设计思路
+### 输入输出数据
 为了适应所有的编程语言，所有的输入和输出均保存在同一个字符串中，并且使用最原始的方式保存数据。
 
 例如真实的输入输出：
@@ -41,12 +42,12 @@
 
 这样的方式可以适应所有的编程语言，因为几乎所有的编程语言都支持从标准输入流中读取数据，当有了这些数据之后，相应的编程语言可以根据它的特征进一步构造好数据类型，再将构造好的输入数据传递给用户编写的解题函数，然后捕获这个函数的输出，最后再用从输入流中读取的正确输出与该函数的输出进行比对。最后由代码沙箱来捕获判题结果并返回给调用者。
 
-<h3 id="emDJd">运行代码</h3>
+### 运行代码
 当拿到判题模板和解题函数以后，需要将这两份代码前保存在`/tmp`目录下，这样就会比较方便运行代码。
 
 除此之外，调用者还会将`题目ID`和`用户ID`传过来，因此可以使用这两个值来处理目录冲突的问题。
 
-期望的目录格式：`/tmp/<user_id>/<question_id>/<language>`。
+期望的目录格式：`/tmp/<question_id>/<user_id>/<language>`。
 
 假设接收到数据是这样的：
 
@@ -74,7 +75,7 @@
 echo -e '<输入输出文本>' | python3 /tmp/1/2025012849102/python/main.py
 ```
 
-<h3 id="e9N4d">运行结果与异常捕获</h3>
+### 运行结果与异常捕获
 对于所有的判题模板，应该使用相同格式的输出（JSON字符串）：
 
 ```json
@@ -91,7 +92,7 @@ echo -e '<输入输出文本>' | python3 /tmp/1/2025012849102/python/main.py
 
 最后由 Go 语言捕获判题模板的输出，并将其加入本次请求对应的响应中。
 
-<h3 id="iQBCp">限制代码运行内存和时间</h3>
+### 限制代码运行内存和时间
 这个任务由判题模板来限制是最合适的，并且限制粒度需要控制到函数级别。
 
 也就是说需要对`solution`进行单独限制，由相应的编程语言来限制。
@@ -106,7 +107,7 @@ def solution():
 
 以下是各个编程语言的内存时间限制示例：
 
-<h4 id="SUOyH">Python（只支持 Linux 系统）</h4>
+#### Python（只支持 Linux 系统）
 ```python
 import concurrent.futures
 import resource
@@ -138,7 +139,7 @@ if __name__ == "__main__":
     main()
 ```
 
-<h4 id="R1OFW">C</h4>
+#### C
 ```c
 #include <stdio.h>
 #include <signal.h>
@@ -170,7 +171,7 @@ int main() {
 }
 ```
 
-<h4 id="gFIHw">C++</h4>
+#### C++
 ```cpp
 #include <iostream>
 #include <future>
@@ -203,7 +204,7 @@ int main() {
 }
 ```
 
-<h4 id="vgb9m">Java</h4>
+#### Java
 ```java
 import java.util.concurrent.*;
 
@@ -229,7 +230,7 @@ public class Main {
 }
 ```
 
-<h4 id="tUPEH">Go（编程语言版本需要 >= 1.19）</h4>
+#### Go（编程语言版本需要 >= 1.19）
 ```go
 package main
 
@@ -268,8 +269,8 @@ func main() {
 }
 ```
 
-<h2 id="dP5BS">判题接口调用示例</h2>
-<h3 id="FWCaJ">判题沙箱判题接口调用模板</h3>
+## 判题接口调用示例
+### 判题沙箱判题接口调用模板
 ```python
 import httpx
 
@@ -284,14 +285,14 @@ data = {
         {"test_id": 2, "input_output": "输入输出2"}, 
         ...
     ],
-    "timel_limit": "时间限制",
+    "time_limit": "时间限制",
     "memory_limit": "内存限制",
     "user_id": "用户ID"
 }
 response = httpx.post(url, json=data)
 ```
 
-<h3 id="Btcga">接口响应模板</h3>
+### 接口响应模板
 ```json
 {
   "code": 200,  // 200表示判题成功（不代表通过测试用例），422表示输入数据有问题
@@ -312,7 +313,7 @@ response = httpx.post(url, json=data)
 }
 ```
 
-<h3 id="zY2i6">真实调用示例</h3>
+### 真实调用示例
 ```python
 import httpx
 
@@ -348,7 +349,7 @@ tests = [
         "input_output": "2\n10 11\n22"
     }
 ]
-timel_limit = 1000 * 20  # 单位是ms
+time_limit = 1000 * 20  # 单位是ms
 memory_limit = 500  # 单位是MB
 
 data = {
@@ -357,7 +358,7 @@ data = {
     "judge_template": judge_template,
     "solution_code": solution_code,
     "tests": tests,
-    "timel_limit": timel_limit,
+    "time_limit": time_limit,
     "memory_limit": memory_limit,
     "user_id": "2025012849102"
 }
@@ -365,7 +366,7 @@ url = "http://localhost:8080/judgement"
 response = httpx.post(url, json=data)
 ```
 
-<h3 id="lSKAY">真实返回响应</h3>
+### 真实返回响应
 ```json
 {
   "code": 200,
@@ -394,4 +395,3 @@ response = httpx.post(url, json=data)
   ]
 }
 ```
-

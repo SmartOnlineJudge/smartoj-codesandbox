@@ -1,36 +1,44 @@
 package sandbox
 
 import (
-	"fmt"
-	"path/filepath"
+	"os"
 
-	"smartoj-codesandbox/internal"
+	"smartoj-codesandbox/internal/types"
 )
 
+// 定义代码执行函数映射
+var executeFuncMapping = map[string]func(*types.JudgementData, *types.Results, string) int{
+	"python": executePython,
+}
 
 // 代码执行器
 type CodeExecutor struct {
-	WorkSpace string // 工作目录
+	workspace string  // 工作目录
+	jd *types.JudgementData  // 判题元数据
 }
 
 // 执行代码
-func (e *CodeExecutor) executeCode() {
+func (e *CodeExecutor) execute() (string, *types.Results) {
+	// 创建工作目录
+	err := os.MkdirAll(e.workspace, 0755)
 
-}
+	// 创建判题结果
+	results := make(types.Results, 0, len(e.jd.Tests))
 
-// 创建新的代码执行器
-func CreateCodeExecutor(workspace string) (*CodeExecutor) {
-	return &CodeExecutor{
-		WorkSpace: workspace,
+	if err != nil {
+		return "目录创建失败", &results
 	}
-}
 
-// 执行代码
-// 提供给外部调用者调用
-func ExecuteCode(jd *internal.JudgementData) (error) {
-	var workspaceName string = fmt.Sprintf("%d/%s/%s", jd.QuestionId, jd.UserId, jd.Language)
-	workspace := filepath.Join("/tmp", workspaceName)
-	executor := CreateCodeExecutor(workspace)
-	fmt.Println(executor.WorkSpace)
-	return nil
+	// 获取判题函数
+	executeFunc, ok := executeFuncMapping[e.jd.Language]
+	if !ok {
+		return "选择了不支持的编程语言", &results
+	}
+
+	// 执行判题
+	var status int = executeFunc(e.jd, &results, e.workspace)
+	if status == -1 {
+		return "判题异常", &results
+	}
+	return "", &results
 }

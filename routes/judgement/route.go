@@ -1,16 +1,26 @@
 package judgement
 
 import (
+	"fmt"
 	"net/http"
 
-	"smartoj-codesandbox/internal"
-	// "smartoj-codesandbox/internal/sandbox"
+	"smartoj-codesandbox/internal/sandbox"
+	"smartoj-codesandbox/internal/types"
 
 	"github.com/gin-gonic/gin"
 )
 
+// 支持的语言配置
+var supportedLanguages = map[string]bool{
+	"python": true,
+	// "cpp": true, 
+	// "c": true,
+	// "java": true,
+	// "go": true,
+}
+
 // 验证判题请求
-func validateRequest(jd *internal.JudgementData) string {
+func validateRequest(jd *types.JudgementData) string {
 	if jd.Code == "" {
 		return "代码不能为空"
 	}
@@ -34,8 +44,8 @@ func validateRequest(jd *internal.JudgementData) string {
 	}
 
 	// 检查语言是否支持
-	if _, ok := internal.SupportedLanguages[jd.Language]; !ok {
-		return "不支持的语言类型: " + jd.Language
+	if _, ok := supportedLanguages[jd.Language]; !ok {
+		return fmt.Sprintf("暂不支持 %s 编程语言", jd.Language)
 	}
 
 	return ""
@@ -43,12 +53,12 @@ func validateRequest(jd *internal.JudgementData) string {
 
 // 处理评测请求
 func Judge(c *gin.Context) {
-	var jd internal.JudgementData
+	var jd types.JudgementData
 	
 	// 获取请求数据
 	err := c.ShouldBindJSON(&jd)
 	if err != nil {
-		c.JSON(http.StatusOK, internal.SandboxResponse{
+		c.JSON(http.StatusOK, types.SandboxResponse{
 			Code: 422,
 			Message: "无效的请求数据",
 		})
@@ -58,18 +68,26 @@ func Judge(c *gin.Context) {
 	// 验证请求
 	errorMessage := validateRequest(&jd)
 	if errorMessage != "" {
-		c.JSON(http.StatusOK, internal.SandboxResponse{
+		c.JSON(http.StatusOK, types.SandboxResponse{
 			Code: 422,
 			Message: errorMessage,
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, internal.SandboxResponse{
+	// 执行代码
+	errorMessage, results := sandbox.ExecuteCode(&jd)
+	if errorMessage != "" {
+		c.JSON(http.StatusOK, types.SandboxResponse{
+			Code: 500,
+			Message: errorMessage,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, types.SandboxResponse{
 		Code: 200,
 		Message: "OK",
+		Results: results,
 	})
-	
-	// 执行代码
-	// sandbox.ExecuteCode(&jd)
 }
