@@ -1,8 +1,9 @@
 import json
+import traceback
 from typing import Callable, Any, Sequence
 
 
-class Runner:
+class RunnerBase:
     def __init__(self, solution: Callable):
         self.inputs: Sequence[Any, ...] = None
         self.outputs: Sequence[Any, ...] = None
@@ -28,8 +29,8 @@ class Runner:
         is_success = False
         try:
             answer = self.solution(*self.inputs)
-        except Exception as exception:
-            result = exception
+        except Exception as _:
+            result = traceback.format_exc()
             status = -1
         else:
             is_success = self.check_answer(answer)

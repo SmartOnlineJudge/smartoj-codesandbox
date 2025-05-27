@@ -2,7 +2,6 @@ package python
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -43,6 +42,7 @@ func createCodeFile(workspace, solutionCode, judgeTemplate string) string {
 	}()
 
 	// 创建相关文件
+	judgeTemplate += "\n_runner = Runner(solution)\n_runner.run()"  // 增加判题模板的调用
 	solutionFp.WriteString(solutionCode)
 	mainFp.WriteString(judgeTemplate)
 	targetRunnerPath := filepath.Join(workspace, RUNNER_FILE_NAME)
@@ -61,15 +61,16 @@ func ExecutePython(workspace string, jd *types.JudgementData, results *types.Res
 	}
 	var mainPath = filepath.Join(workspace, MAIN_FILE_NAME)
 	for _, test := range jd.Tests {
+		var result types.Result
 		cmd := exec.Command(PYTHON_BIN_NAME, mainPath)
 		cmd.Stdin = strings.NewReader(test.InputOutput)
 		output, err := cmd.CombinedOutput()
 		if err != nil {
-			fmt.Println("代码执行异常：\n", string(output), "\n", err)
-			continue
+			result.Status = -1
+			result.Result = string(output)
+		} else {
+			json.Unmarshal(output, &result)
 		}
-		var result types.Result
-		json.Unmarshal(output, &result)
 		result.TestId = test.TestId
 		*results = append(*results, result)
 	}
