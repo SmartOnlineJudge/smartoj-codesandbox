@@ -27,8 +27,8 @@ type Result struct {
 	TestId         int    `json:"test_id"`
 	Status         int    `json:"status"` // 代码运行异常时为-1
 	Result         string `json:"result"`  // 判题结果（OK | ErrorMessage）
-	Solution       string `json:"solution"` // 解题函数的输出（字符串）
-	Criterion      string `json:"criterion"` // 正确的输出（字符串）
+	Answer         any `json:"answer"` // 解题函数的输出（字符串）
+	Criterion      any `json:"criterion"` // 正确的输出（字符串）
 	TimeConsumed   int  `json:"time_consumed"`  // 运行该测试用例消耗的时间
 	MemoryConsumed float32  `json:"memory_consumed"`  // 运行该测试用例消耗的内存
 	IsSuccess      bool   `json:"is_success"` // 是否通过该测试用例

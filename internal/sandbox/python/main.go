@@ -1,6 +1,7 @@
-package sandbox
+package python
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -13,8 +14,12 @@ import (
 // 必要的文件名称
 var SOLUTION_FILE_NAME = "solution_code.py"
 var MAIN_FILE_NAME = "main.py"
+var RUNNER_FILE_NAME = "runner.py"
 
-// 创建相关文件
+// Python 二进制文件名称
+var PYTHON_BIN_NAME = "python3"
+
+// 创建必要的代码文件
 func createCodeFile(workspace, solutionCode, judgeTemplate string) string {
 	// 构建文件路径
 	var solutionPath, mainPath string
@@ -40,26 +45,33 @@ func createCodeFile(workspace, solutionCode, judgeTemplate string) string {
 	// 创建相关文件
 	solutionFp.WriteString(solutionCode)
 	mainFp.WriteString(judgeTemplate)
+	targetRunnerPath := filepath.Join(workspace, RUNNER_FILE_NAME)
+	currentDir, _ := os.Getwd()
+	currentRunnerPath := filepath.Join(currentDir, "internal/sandbox/python/runner.py")
+	exec.Command("cp", currentRunnerPath, targetRunnerPath).Run()
 
 	return ""
 }
 
 // 运行 Python 代码
-func executePython(workspace string, jd *types.JudgementData, results *types.Results) string {
+func ExecutePython(workspace string, jd *types.JudgementData, results *types.Results) string {
 	errMessage := createCodeFile(workspace, jd.SolutionCode, jd.JudgeTemplate)
 	if errMessage != "" {
 		return errMessage
 	}
 	var mainPath = filepath.Join(workspace, MAIN_FILE_NAME)
 	for _, test := range jd.Tests {
-		cmd := exec.Command("python3", mainPath)
+		cmd := exec.Command(PYTHON_BIN_NAME, mainPath)
 		cmd.Stdin = strings.NewReader(test.InputOutput)
 		output, err := cmd.CombinedOutput()
 		if err != nil {
-			fmt.Println("代码执行异常：\n", string(output))
-		} else {
-			fmt.Println(string(output))	
+			fmt.Println("代码执行异常：\n", string(output), "\n", err)
+			continue
 		}
+		var result types.Result
+		json.Unmarshal(output, &result)
+		result.TestId = test.TestId
+		*results = append(*results, result)
 	}
 	return ""
 }

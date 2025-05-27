@@ -3,12 +3,13 @@ package sandbox
 import (
 	"os"
 
+	"smartoj-codesandbox/internal/sandbox/python"
 	"smartoj-codesandbox/internal/types"
 )
 
 // 定义代码执行函数映射
 var executeFuncMapping = map[string]func(string, *types.JudgementData, *types.Results) string{
-	"python": executePython,
+	"python": python.ExecutePython,
 }
 
 // 代码执行器
