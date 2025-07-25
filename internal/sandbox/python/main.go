@@ -2,6 +2,7 @@ package python
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,13 +11,19 @@ import (
 	"smartoj-codesandbox/internal/types"
 )
 
-// 必要的文件名称
-var SOLUTION_FILE_NAME = "solution_code.py"
-var MAIN_FILE_NAME = "main.py"
-var RUNNER_FILE_NAME = "runner.py"
 
-// Python 二进制文件名称
-var PYTHON_BIN_NAME = "python3"
+const SOLUTION_FILE_NAME = "solution_code.py"  // 保存用户的解题代码
+const MAIN_FILE_NAME = "main.py"  // 主模块
+const RUNNER_FILE_NAME = "runner.py"  // 运行期模块
+const RUNNER_RELATIVE_PATH = "internal/sandbox/python/" + RUNNER_FILE_NAME  // runner.py 相对路径
+const IMPORT_RUNNER_CODE = "from runner import BaseRunner, run"  // 导入运行器的代码
+const RUN_RUNNER_CODE = "run(Runner)"  // 运行运行器的代码
+const PYTHON_BIN_NAME = "python3"  // Python 二进制文件名称
+
+// 构建主文件内容 main.py
+func constructMainFileContent(judgeTemplate string) string {
+	return IMPORT_RUNNER_CODE + "\n" + judgeTemplate + "\n" + RUN_RUNNER_CODE
+}
 
 // 创建必要的代码文件
 func createCodeFile(workspace, solutionCode, judgeTemplate string) string {
@@ -41,13 +48,17 @@ func createCodeFile(workspace, solutionCode, judgeTemplate string) string {
 		mainFp.Close()
 	}()
 
-	// 创建相关文件
-	judgeTemplate += "\n_runner = Runner(solution)\n_runner.run()"  // 增加判题模板的调用
+	// 构建主文件代码
+	mainContent := constructMainFileContent(judgeTemplate)
+	fmt.Println(mainContent)
+
 	solutionFp.WriteString(solutionCode)
-	mainFp.WriteString(judgeTemplate)
+	mainFp.WriteString(mainContent)
+	
+	// 将 runner.py 模块拷贝到指定目录下
 	targetRunnerPath := filepath.Join(workspace, RUNNER_FILE_NAME)
 	currentDir, _ := os.Getwd()
-	currentRunnerPath := filepath.Join(currentDir, "internal/sandbox/python/runner.py")
+	currentRunnerPath := filepath.Join(currentDir, RUNNER_RELATIVE_PATH)
 	exec.Command("cp", currentRunnerPath, targetRunnerPath).Run()
 
 	return ""
@@ -66,7 +77,7 @@ func ExecutePython(workspace string, jd *types.JudgementData, results *types.Res
 		cmd.Stdin = strings.NewReader(test.InputOutput)
 		output, err := cmd.CombinedOutput()
 		if err != nil {
-			result.Status = -1
+			result.Status = -2  // -1 为用户提交代码内的报错，-2 为 Runner 内部的错误
 			result.Result = string(output)
 		} else {
 			json.Unmarshal(output, &result)
