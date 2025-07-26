@@ -43,3 +43,6 @@ Thumbs.db
 
 # 忽略测试文件
 test*.go
+
+# 忽略__pycache__目录
+__pycache__/
