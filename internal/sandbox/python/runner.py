@@ -181,4 +181,4 @@ class BaseRunner:
             "memory_consumed": memory_consumed
         }
 
-        print(json.dumps(run_result))
+        print("<SandboxOutput-Start-" + json.dumps(run_result) + "-SandboxOutput-End>")
