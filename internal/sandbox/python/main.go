@@ -71,6 +71,28 @@ func filterRealOutput(terminalOutput string) string {
 	return compiledRealOutputRegexp.FindStringSubmatch(terminalOutput)[1]
 }
 
+// 为每一个测试用例判题
+func judgeForTest(resultChan chan types.Result, test types.Test, mainPath string, limitsInput string) {
+	var result types.Result
+
+	cmd := exec.Command(PYTHON_BIN_NAME, mainPath)
+	cmd.Stdin = strings.NewReader(limitsInput + test.InputOutput)
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		result.Status = -2  // -2 为 Runner 内部的错误
+		result.Result = string(output)
+	} else {
+		// 用户的解题函数中也有输出，此时怎么办？
+		// 1. 将最终的结果保存在一个文件中，Go 语言读取这个文件即可 
+		// 2. 将最终的结果使用特殊标记包裹起来，然后使用正则表达式匹配里面的内容 √
+		realOutput := filterRealOutput(string(output))
+		json.Unmarshal([]byte(realOutput), &result)
+	}
+	result.TestId = test.TestId
+	resultChan <- result
+}
+
 // 运行 Python 代码
 func ExecutePython(workspace string, jd *types.JudgementData, results *types.Results) string {
 	errMessage := createCodeFile(workspace, jd.SolutionCode, jd.JudgeTemplate)
@@ -78,26 +100,16 @@ func ExecutePython(workspace string, jd *types.JudgementData, results *types.Res
 		return errMessage
 	}
 	var mainPath = filepath.Join(workspace, MAIN_FILE_NAME)
+	limitsInput := fmt.Sprintf("%d %f\n", jd.TimeLimit, jd.MemoryLimit)
+
+	var testNum int = len(jd.Tests)
+	resultChan := make(chan types.Result, testNum)
+
 	for _, test := range jd.Tests {
-		var result types.Result
-		limitsInput := fmt.Sprintf("%d %f\n", jd.TimeLimit, jd.MemoryLimit)
-
-		cmd := exec.Command(PYTHON_BIN_NAME, mainPath)
-		cmd.Stdin = strings.NewReader(limitsInput + test.InputOutput)
-		output, err := cmd.CombinedOutput()
-
-		if err != nil {
-			result.Status = -2  // -2 为 Runner 内部的错误
-			result.Result = string(output)
-		} else {
-			// 用户的解题函数中也有输出，此时怎么办？
-			// 1. 将最终的结果保存在一个文件中，Go 语言读取这个文件即可 
-			// 2. 将最终的结果使用特殊标记包裹起来，然后使用正则表达式匹配里面的内容 √
-			realOutput := filterRealOutput(string(output))
-			json.Unmarshal([]byte(realOutput), &result)
-		}
-		result.TestId = test.TestId
-		*results = append(*results, result)
+		go judgeForTest(resultChan, test, mainPath, limitsInput)
+	}
+	for i := 0; i < testNum; i++ {
+		*results = append(*results, <-resultChan)
 	}
 	return ""
 }
